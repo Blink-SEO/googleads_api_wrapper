@@ -653,6 +653,9 @@ class KeywordPlanIdeaService(ClientWrapper):
             request.keyword_and_url_seed.url = page_url
             request.keyword_and_url_seed.keywords.extend(phrases)
 
+        if not phrases and not page_url:
+            raise ValueError("must supply either `phrases` or `url`")
+
         keyword_ideas_pager = self.keyword_plan_idea_service.generate_keyword_ideas(request=request)
 
         # keyword_ideas_list = [idea for idea in keyword_ideas_pager]
