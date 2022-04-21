@@ -1,0 +1,215 @@
+name,iso_country_code,location_id
+Afghanistan,AFG,2004
+Albania,ALB,2008
+Antarctica,ATA,2010
+Algeria,DZA,2012
+American Samoa,ASM,2016
+Andorra,AND,2020
+Angola,AGO,2024
+Antigua and Barbuda,ATG,2028
+Azerbaijan,AZE,2031
+Argentina,ARG,2032
+Australia,AUS,2036
+Austria,AUT,2040
+The Bahamas,BHS,2044
+Bahrain,BHR,2048
+Bangladesh,BGD,2050
+Armenia,ARM,2051
+Barbados,BRB,2052
+Belgium,BEL,2056
+Bhutan,BTN,2064
+Bolivia,BOL,2068
+Bosnia and Herzegovina,BIH,2070
+Botswana,BWA,2072
+Brazil,BRA,2076
+Belize,BLZ,2084
+Solomon Islands,SLB,2090
+Brunei,BRN,2096
+Bulgaria,BGR,2100
+Myanmar (Burma),MMR,2104
+Burundi,BDI,2108
+Belarus,BLR,2112
+Cambodia,KHM,2116
+Cameroon,CMR,2120
+Canada,CAN,2124
+Cape Verde,CPV,2132
+Central African Republic,CAF,2140
+Sri Lanka,LKA,2144
+Chad,TCD,2148
+Chile,CHL,2152
+China,CHN,2156
+Christmas Island,CXR,2162
+Cocos (Keeling) Islands,CCK,2166
+Colombia,COL,2170
+Comoros,COM,2174
+Republic of the Congo,COG,2178
+Democratic Republic of the Congo,COD,2180
+Cook Islands,COK,2184
+Costa Rica,CRI,2188
+Croatia,HRV,2191
+Cyprus,CYP,2196
+Czechia,CZE,2203
+Benin,BEN,2204
+Denmark,DNK,2208
+Dominica,DMA,2212
+Dominican Republic,DOM,2214
+Ecuador,ECU,2218
+El Salvador,SLV,2222
+Equatorial Guinea,GNQ,2226
+Ethiopia,ETH,2231
+Eritrea,ERI,2232
+Estonia,EST,2233
+South Georgia and the South Sandwich Islands,SGS,2239
+Fiji,FJI,2242
+Finland,FIN,2246
+France,FRA,2250
+French Polynesia,PYF,2258
+French Southern and Antarctic Lands,ATF,2260
+Djibouti,DJI,2262
+Gabon,GAB,2266
+Georgia,GEO,2268
+The Gambia,GMB,2270
+Germany,DEU,2276
+Ghana,GHA,2288
+Kiribati,KIR,2296
+Greece,GRC,2300
+Grenada,GRD,2308
+Guam,GUM,2316
+Guatemala,GTM,2320
+Guinea,GIN,2324
+Guyana,GUY,2328
+Haiti,HTI,2332
+Heard Island and McDonald Islands,HMD,2334
+Vatican City,VAT,2336
+Honduras,HND,2340
+Hungary,HUN,2348
+Iceland,ISL,2352
+India,IND,2356
+Indonesia,IDN,2360
+Iraq,IRQ,2368
+Ireland,IRL,2372
+Israel,ISR,2376
+Italy,ITA,2380
+Cote d'Ivoire,CIV,2384
+Jamaica,JAM,2388
+Japan,JPN,2392
+Kazakhstan,KAZ,2398
+Jordan,JOR,2400
+Kenya,KEN,2404
+South Korea,KOR,2410
+Kuwait,KWT,2414
+Kyrgyzstan,KGZ,2417
+Laos,LAO,2418
+Lebanon,LBN,2422
+Lesotho,LSO,2426
+Latvia,LVA,2428
+Liberia,LBR,2430
+Libya,LBY,2434
+Liechtenstein,LIE,2438
+Lithuania,LTU,2440
+Luxembourg,LUX,2442
+Madagascar,MDG,2450
+Malawi,MWI,2454
+Malaysia,MYS,2458
+Maldives,MDV,2462
+Mali,MLI,2466
+Malta,MLT,2470
+Mauritania,MRT,2478
+Mauritius,MUS,2480
+Mexico,MEX,2484
+Monaco,MCO,2492
+Mongolia,MNG,2496
+Moldova,MDA,2498
+Montenegro,MNE,2499
+Morocco,MAR,2504
+Mozambique,MOZ,2508
+Oman,OMN,2512
+Namibia,NAM,2516
+Nauru,NRU,2520
+Nepal,NPL,2524
+Netherlands,NLD,2528
+Curacao,CUW,2531
+Sint Maarten,SXM,2534
+Caribbean Netherlands,BES,2535
+New Caledonia,NCL,2540
+Vanuatu,VUT,2548
+New Zealand,NZL,2554
+Nicaragua,NIC,2558
+Niger,NER,2562
+Nigeria,NGA,2566
+Niue,NIU,2570
+Norfolk Island,NFK,2574
+Norway,NOR,2578
+Northern Mariana Islands,MNP,2580
+United States Minor Outlying Islands,UMI,2581
+Federated States of Micronesia,FSM,2583
+Marshall Islands,MHL,2584
+Palau,PLW,2585
+Pakistan,PAK,2586
+Panama,PAN,2591
+Papua New Guinea,PNG,2598
+Paraguay,PRY,2600
+Peru,PER,2604
+Philippines,PHL,2608
+Pitcairn Islands,PCN,2612
+Poland,POL,2616
+Portugal,PRT,2620
+Guinea-Bissau,GNB,2624
+Timor-Leste,TLS,2626
+Qatar,QAT,2634
+Romania,ROU,2642
+Russia,RUS,2643
+Rwanda,RWA,2646
+"Saint Helena, Ascension and Tristan da Cunha",SHN,2654
+Saint Kitts and Nevis,KNA,2659
+Saint Lucia,LCA,2662
+Saint Pierre and Miquelon,SPM,2666
+Saint Vincent and the Grenadines,VCT,2670
+San Marino,SMR,2674
+Sao Tome and Principe,STP,2678
+Saudi Arabia,SAU,2682
+Senegal,SEN,2686
+Serbia,SRB,2688
+Seychelles,SYC,2690
+Sierra Leone,SLE,2694
+Singapore,SGP,2702
+Slovakia,SVK,2703
+Vietnam,VNM,2704
+Slovenia,SVN,2705
+Somalia,SOM,2706
+South Africa,ZAF,2710
+Zimbabwe,ZWE,2716
+Spain,ESP,2724
+Sudan,SDN,2736
+Suriname,SUR,2740
+Eswatini,SWZ,2748
+Sweden,SWE,2752
+Switzerland,CHE,2756
+Tajikistan,TJK,2762
+Thailand,THA,2764
+Togo,TGO,2768
+Tokelau,TKL,2772
+Tonga,TON,2776
+Trinidad and Tobago,TTO,2780
+United Arab Emirates,ARE,2784
+Tunisia,TUN,2788
+Turkey,TUR,2792
+Turkmenistan,TKM,2795
+Tuvalu,TUV,2798
+Uganda,UGA,2800
+Ukraine,UKR,2804
+North Macedonia,MKD,2807
+Egypt,EGY,2818
+United Kingdom,GBR,2826
+Guernsey,GGY,2831
+Jersey,JEY,2832
+Tanzania,TZA,2834
+United States,USA,2840
+Burkina Faso,BFA,2854
+Uruguay,URY,2858
+Uzbekistan,UZB,2860
+Venezuela,VEN,2862
+Wallis and Futuna,WLF,2876
+Samoa,WSM,2882
+Yemen,YEM,2887
+Zambia,ZMB,2894
