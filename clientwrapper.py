@@ -660,7 +660,9 @@ class KeywordPlanIdeaService(ClientWrapper):
 
         # keyword_ideas_list = [idea for idea in keyword_ideas_pager]
 
-        keyword_ideas = [{"phrase": idea.text,
+        _date_today = datetime.date.today()
+        keyword_ideas = [{"date_obtained": _date_today,
+                          "phrase": idea.text,
                           "avg_searches": idea.keyword_idea_metrics.avg_monthly_searches,
                           "competition": idea.keyword_idea_metrics.competition.name,
                           "competition_index": idea.keyword_idea_metrics.competition_index,
