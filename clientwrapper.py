@@ -14,6 +14,8 @@ DEFAULT_LANGUAGE_ID = "1000"  # language defaults to "1000" (i.e. English)
 DEFAULT_KEYWORD_PLAN_CAMPAIGN_CPC_BID = 1000000
 DEFAULT_KEYWORD_PLAN_AD_GROUP_CPC_BID = 250000
 
+RE_URL = re.compile(r"https?://(www\.)?[\w\-_+]*(\.\w{2,4}){0,2}/")
+
 
 class ClientWrapper:
     def __init__(self,
@@ -576,7 +578,7 @@ class KeywordPlanIdeaService(ClientWrapper):
     def __init__(self,
                  googleads_client,
                  customer_id: str,
-                 site_url: str,
+                 site_url: str = None,
                  location_codes: List[str] = None,
                  language_id: Optional[str] = None
                  ):
@@ -624,7 +626,9 @@ class KeywordPlanIdeaService(ClientWrapper):
         request.keyword_plan_network = self.keyword_plan_network
         # request.page_size = page_size
 
-        if url is None or url == "" or url == "/":
+        if RE_URL.match(url):
+            page_url = url
+        elif url == "/" or url == "":
             page_url = self.site_url
         elif url[0] == "/":
             page_url = self.site_url + url[1:]
