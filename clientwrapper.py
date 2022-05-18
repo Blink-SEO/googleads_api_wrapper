@@ -386,11 +386,24 @@ class KeywordPlanService(ClientWrapper):
 
         metrics_dict = {d.get("query"): d for d in metrics}
 
+        print("")
+        print("queries not obtained: ")
+        for keyword, query in stripped_keyword_dict.items():
+            if query not in metrics_dict.keys():
+                print(f"|{keyword}| :: |{query}|")
+        print("")
+        print("extras: ")
+        for query in metrics_dict.keys():
+            if query not in stripped_keyword_dict.values():
+                print(f"|{query}|")
+        print("")
+
         metrics = []
         for keyword, query in stripped_keyword_dict.items():
             d = metrics_dict.get(query)
-            d["keyword"] = keyword
-            metrics.append(d)
+            if d:
+                d["keyword"] = keyword
+                metrics.append(d)
 
         return metrics
 
@@ -706,7 +719,7 @@ def _three_month_trend_coef(volume_trends: List[int]):
     y = np.array(volume_trends)
     x = np.arange(len(y))
     p = np.polyfit(x[-3:], y[-3:], deg=1)
-    return p[0] / y.mean()
+    return round(p[0] / y.mean(), 3)
 
 
 def _latest_volume(volume_trends):
@@ -759,6 +772,7 @@ def _map_language_id_to_resource_name(client, language_id):
 
 
 def strip_illegal_chars(s):
-    for char in r"""!@%'^()={};~"`<>?/\|""":
+    for char in r"""!@%^()={};~"`<>?/\|""":
         s = s.replace(char, "")
-    return s
+    s = re.sub(r"\s+", " ", s)
+    return s.strip()
