@@ -317,12 +317,11 @@ class KeywordPlanService(ClientWrapper):
                                keywords: List[str],
                                location_codes: List[str] = None,
                                language_id: str = None) -> pd.DataFrame:
-        keyword_plan = self.add_keyword_plan(keywords=keywords,
-                                             match_type="EXACT",
-                                             location_codes=location_codes,
-                                             language_id=language_id)
-        metrics = self.generate_forecast_metrics(keyword_plan_resource_name=keyword_plan,
-                                                 keywords=keywords)
+        keyword_plan, stripped_keyword_dict = self.add_keyword_plan(keywords=keywords,
+                                                                    match_type="EXACT",
+                                                                    location_codes=location_codes,
+                                                                    language_id=language_id)
+        metrics = self.generate_forecast_metrics(keyword_plan_resource_name=keyword_plan)
         _df = pd.DataFrame(metrics)
 
         keywords_df = self.get_keyword_plan_ad_group_keywords(keyword_plan_resource_name=keyword_plan)
@@ -338,12 +337,12 @@ class KeywordPlanService(ClientWrapper):
                                   keywords: List[str],
                                   location_codes: List[str] = None,
                                   language_id: str = None) -> pd.DataFrame:
-        keyword_plan = self.add_keyword_plan(keywords=keywords,
-                                             match_type="EXACT",
-                                             location_codes=location_codes,
-                                             language_id=language_id)
+        keyword_plan, stripped_keyword_dict = self.add_keyword_plan(keywords=keywords,
+                                                                    match_type="EXACT",
+                                                                    location_codes=location_codes,
+                                                                    language_id=language_id)
         metrics = self.generate_historical_metrics(keyword_plan_resource_name=keyword_plan,
-                                                   keywords=keywords)
+                                                   stripped_keyword_dict=stripped_keyword_dict)
         # self.remove_keyword_plan(keyword_plan_resource_name=keyword_plan)
         _df = pd.DataFrame(metrics)
         _df["volume_trend_coef"] = _df["volume_trend"].apply(_three_month_trend_coef)
@@ -351,8 +350,8 @@ class KeywordPlanService(ClientWrapper):
 
         return _df
 
-    def generate_forecast_metrics(self, keyword_plan_resource_name: str,
-                                  keywords: List[str]):
+    def generate_forecast_metrics(self,
+                                  keyword_plan_resource_name: str):
         response_forcast = self.keyword_plan_service.generate_forecast_metrics(
             keyword_plan=keyword_plan_resource_name,
         )
@@ -366,15 +365,11 @@ class KeywordPlanService(ClientWrapper):
                     "cost_micros": _m.keyword_forecast.cost_micros}
                    for _m in response_forcast.keyword_forecasts]
 
-        new_metrics_list = []
-        for metric_dict, keyword in zip(metrics, keywords):
-            metric_dict["keyword"] = keyword
-            new_metrics_list.append(metric_dict)
+        return metrics
 
-        return new_metrics_list
-
-    def generate_historical_metrics(self, keyword_plan_resource_name: str,
-                                    keywords: List[str]):
+    def generate_historical_metrics(self,
+                                    keyword_plan_resource_name: str,
+                                    stripped_keyword_dict: dict):
         response_historical = self.keyword_plan_service.generate_historical_metrics(
             keyword_plan=keyword_plan_resource_name
         )
@@ -389,12 +384,15 @@ class KeywordPlanService(ClientWrapper):
                     "volume_trend": [v.monthly_searches for v in _m.keyword_metrics.monthly_search_volumes]}
                    for _m in response_historical.metrics]
 
-        new_metrics_list = []
-        for metric_dict, keyword in zip(metrics, keywords):
-            metric_dict["keyword"] = keyword
-            new_metrics_list.append(metric_dict)
+        metrics_dict = {d.get("query"): d for d in metrics}
 
-        return new_metrics_list
+        metrics = []
+        for keyword, query in stripped_keyword_dict.items():
+            d = metrics_dict.get(query)
+            d["keyword"] = keyword
+            metrics.append(d)
+
+        return metrics
 
     def add_keyword_plan(self,
                          keywords: Union[List[str], str],
@@ -423,12 +421,8 @@ class KeywordPlanService(ClientWrapper):
         if isinstance(keywords, str):
             keywords = [keywords]
 
-        new_keyword_list = []
-        for kw in keywords:
-            for char in r"""!@%'^()={};~"`<>?/\|""":
-                kw = kw.replace(char, "")
-            new_keyword_list.append(kw)
-        keywords = new_keyword_list
+        stripped_keyword_dict = {kw: strip_illegal_chars(kw) for kw in keywords}
+        keywords = list(set(stripped_keyword_dict.values()))
 
         if isinstance(cpc_bid_micros, int):
             cpc_bid_micros = [cpc_bid_micros] * len(keywords)
@@ -448,7 +442,7 @@ class KeywordPlanService(ClientWrapper):
             match_type=match_type,
             cpc_bid_micros=cpc_bid_micros
         )
-        return keyword_plan
+        return keyword_plan, stripped_keyword_dict
 
     def _create_keyword_plan(self, forecast_interval: str = "NEXT_QUARTER"):
         """Adds a keyword plan to the customer account.
@@ -762,3 +756,9 @@ def _map_locations_ids_to_resource_names(client, location_ids):
 
 def _map_language_id_to_resource_name(client, language_id):
     return client.get_service("GoogleAdsService").language_constant_path(criterion_id=language_id)
+
+
+def strip_illegal_chars(s):
+    for char in r"""!@%'^()={};~"`<>?/\|""":
+        s = s.replace(char, "")
+    return s
