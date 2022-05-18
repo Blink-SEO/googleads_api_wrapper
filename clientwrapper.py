@@ -434,6 +434,8 @@ class KeywordPlanService(ClientWrapper):
         if isinstance(keywords, str):
             keywords = [keywords]
 
+        keywords = [kw for kw in keywords if len(kw.split(" ")) <= 10]
+
         stripped_keyword_dict = {kw: strip_illegal_chars(kw) for kw in keywords}
         keywords = list(set(stripped_keyword_dict.values()))
 
@@ -772,7 +774,11 @@ def _map_language_id_to_resource_name(client, language_id):
 
 
 def strip_illegal_chars(s):
+    # first remove any non-ascii characters, replace with a space
+    s = re.sub(r"[^\x00-\x7F]+", " ", s)
+    # then replace any punctuation with a space
     for char in r"""!@%^()={};~"`<>?/\|""":
-        s = s.replace(char, "")
+        s = s.replace(char, " ")
+    # finally, replace multiple spaces (r"\s+") with a single space
     s = re.sub(r"\s+", " ", s)
     return s.strip()
