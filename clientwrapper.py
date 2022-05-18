@@ -775,7 +775,7 @@ def strip_illegal_chars(s):
     # first remove any non-ascii characters, replace with a space
     s = re.sub(r"[^\x00-\x7F]+", " ", s)
     # then replace any punctuation with a space
-    for char in r"""!@%^()={}:;,~"`<>?/\|""":
+    for char in r"""!@%^()={}:;,~"`#<>?/\|*&[]""":
         s = s.replace(char, " ")
     # finally, replace multiple spaces (r"\s+") with a single space
     s = re.sub(r"\s+", " ", s)
