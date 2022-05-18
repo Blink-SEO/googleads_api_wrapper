@@ -22,7 +22,7 @@ class ClientWrapper:
                  googleads_client,
                  customer_id: str,
                  location_codes: List[str] = None,
-                 language_id: str = DEFAULT_LANGUAGE_ID
+                 language_id: str = None
                  ):
         self.client = googleads_client
         self.customer_id = customer_id
@@ -406,6 +406,14 @@ class KeywordPlanService(ClientWrapper):
 
         if isinstance(keywords, str):
             keywords = [keywords]
+
+        new_keyword_list = []
+        for kw in keywords:
+            for char in r"""!@%'^()={};~"`<>?/\|""":
+                kw = kw.replace(char, "")
+            new_keyword_list.append(kw)
+        keywords = new_keyword_list
+
         if isinstance(cpc_bid_micros, int):
             cpc_bid_micros = [cpc_bid_micros] * len(keywords)
 
@@ -717,7 +725,7 @@ def _map_location_to_resource_names(client,
                 location_ids.append(_id)
         elif re.match("[0-9]+", _code):
             location_ids.append(_code)
-            
+
     build_resource_name = client.get_service("GeoTargetConstantService").geo_target_constant_path
     return [build_resource_name(location_id) for location_id in location_ids]
 
@@ -738,14 +746,3 @@ def _map_locations_ids_to_resource_names(client, location_ids):
 
 def _map_language_id_to_resource_name(client, language_id):
     return client.get_service("GoogleAdsService").language_constant_path(criterion_id=language_id)
-
-
-
-
-
-
-
-
-
-
-
