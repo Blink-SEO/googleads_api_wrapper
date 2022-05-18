@@ -321,7 +321,8 @@ class KeywordPlanService(ClientWrapper):
                                              match_type="EXACT",
                                              location_codes=location_codes,
                                              language_id=language_id)
-        metrics = self.generate_forecast_metrics(keyword_plan_resource_name=keyword_plan)
+        metrics = self.generate_forecast_metrics(keyword_plan_resource_name=keyword_plan,
+                                                 keywords=keywords)
         _df = pd.DataFrame(metrics)
 
         keywords_df = self.get_keyword_plan_ad_group_keywords(keyword_plan_resource_name=keyword_plan)
@@ -341,7 +342,8 @@ class KeywordPlanService(ClientWrapper):
                                              match_type="EXACT",
                                              location_codes=location_codes,
                                              language_id=language_id)
-        metrics = self.generate_historical_metrics(keyword_plan_resource_name=keyword_plan)
+        metrics = self.generate_historical_metrics(keyword_plan_resource_name=keyword_plan,
+                                                   keywords=keywords)
         # self.remove_keyword_plan(keyword_plan_resource_name=keyword_plan)
         _df = pd.DataFrame(metrics)
         _df["volume_trend_coef"] = _df["volume_trend"].apply(_three_month_trend_coef)
@@ -349,7 +351,8 @@ class KeywordPlanService(ClientWrapper):
 
         return _df
 
-    def generate_forecast_metrics(self, keyword_plan_resource_name: str):
+    def generate_forecast_metrics(self, keyword_plan_resource_name: str,
+                                  keywords: List[str]):
         response_forcast = self.keyword_plan_service.generate_forecast_metrics(
             keyword_plan=keyword_plan_resource_name,
         )
@@ -362,9 +365,16 @@ class KeywordPlanService(ClientWrapper):
                     "average_cpc": _m.keyword_forecast.average_cpc,
                     "cost_micros": _m.keyword_forecast.cost_micros}
                    for _m in response_forcast.keyword_forecasts]
-        return metrics
 
-    def generate_historical_metrics(self, keyword_plan_resource_name: str):
+        new_metrics_list = []
+        for metric_dict, keyword in zip(metrics, keywords):
+            metric_dict["keyword"] = keyword
+            new_metrics_list.append(metric_dict)
+
+        return new_metrics_list
+
+    def generate_historical_metrics(self, keyword_plan_resource_name: str,
+                                    keywords: List[str]):
         response_historical = self.keyword_plan_service.generate_historical_metrics(
             keyword_plan=keyword_plan_resource_name
         )
@@ -378,7 +388,13 @@ class KeywordPlanService(ClientWrapper):
                     "high_top_of_page_bid_micros": _m.keyword_metrics.high_top_of_page_bid_micros,
                     "volume_trend": [v.monthly_searches for v in _m.keyword_metrics.monthly_search_volumes]}
                    for _m in response_historical.metrics]
-        return metrics
+
+        new_metrics_list = []
+        for metric_dict, keyword in zip(metrics, keywords):
+            metric_dict["keyword"] = keyword
+            new_metrics_list.append(metric_dict)
+
+        return new_metrics_list
 
     def add_keyword_plan(self,
                          keywords: Union[List[str], str],
