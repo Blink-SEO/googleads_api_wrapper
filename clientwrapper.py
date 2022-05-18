@@ -434,10 +434,8 @@ class KeywordPlanService(ClientWrapper):
         if isinstance(keywords, str):
             keywords = [keywords]
 
-        keywords = [kw for kw in keywords if len(kw.split(" ")) <= 10]
-
         stripped_keyword_dict = {kw: strip_illegal_chars(kw) for kw in keywords}
-        keywords = [kw for kw in set(stripped_keyword_dict.values()) if len(kw) > 0]
+        keywords = [kw for kw in set(stripped_keyword_dict.values()) if len(kw) > 0 and len(kw.split(' ') <= 10)]
 
         if isinstance(cpc_bid_micros, int):
             cpc_bid_micros = [cpc_bid_micros] * len(keywords)
