@@ -437,7 +437,7 @@ class KeywordPlanService(ClientWrapper):
         keywords = [kw for kw in keywords if len(kw.split(" ")) <= 10]
 
         stripped_keyword_dict = {kw: strip_illegal_chars(kw) for kw in keywords}
-        keywords = list(set(stripped_keyword_dict.values()))
+        keywords = [kw for kw in set(stripped_keyword_dict.values()) if len(kw) > 0]
 
         if isinstance(cpc_bid_micros, int):
             cpc_bid_micros = [cpc_bid_micros] * len(keywords)
@@ -777,7 +777,7 @@ def strip_illegal_chars(s):
     # first remove any non-ascii characters, replace with a space
     s = re.sub(r"[^\x00-\x7F]+", " ", s)
     # then replace any punctuation with a space
-    for char in r"""!@%^()={};~"`<>?/\|""":
+    for char in r"""!@%^()={}:;,~"`<>?/\|""":
         s = s.replace(char, " ")
     # finally, replace multiple spaces (r"\s+") with a single space
     s = re.sub(r"\s+", " ", s)
