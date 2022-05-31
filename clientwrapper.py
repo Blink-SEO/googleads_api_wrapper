@@ -1,10 +1,15 @@
 import datetime
-from math import ceil
-from typing import List, Optional, Union
+import time
+
 import pandas as pd
 import numpy as np
 import uuid
 import re
+
+from math import ceil
+from typing import List, Optional, Union
+
+from google.api_core.exceptions import InternalServerError
 
 from . import LOCATION_ID_DICT
 
@@ -337,16 +342,28 @@ class KeywordPlanService(ClientWrapper):
                                   keywords: List[str],
                                   location_codes: List[str] = None,
                                   language_id: str = None) -> pd.DataFrame:
-        keyword_plan, stripped_keyword_dict = self.add_keyword_plan(keywords=keywords,
-                                                                    match_type="EXACT",
-                                                                    location_codes=location_codes,
-                                                                    language_id=language_id)
-        metrics = self.generate_historical_metrics(keyword_plan_resource_name=keyword_plan,
-                                                   stripped_keyword_dict=stripped_keyword_dict)
-        # self.remove_keyword_plan(keyword_plan_resource_name=keyword_plan)
-        _df = pd.DataFrame(metrics)
-        _df["volume_trend_coef"] = _df["volume_trend"].apply(_three_month_trend_coef)
-        _df["latest_volume"] = _df["volume_trend"].apply(_latest_volume)
+
+        try:
+            keyword_plan, stripped_keyword_dict = self.add_keyword_plan(keywords=keywords,
+                                                                        match_type="EXACT",
+                                                                        location_codes=location_codes,
+                                                                        language_id=language_id)
+            metrics = self.generate_historical_metrics(keyword_plan_resource_name=keyword_plan,
+                                                       stripped_keyword_dict=stripped_keyword_dict)
+            # self.remove_keyword_plan(keyword_plan_resource_name=keyword_plan)
+            _df = pd.DataFrame(metrics)
+            _df["volume_trend_coef"] = _df["volume_trend"].apply(_three_month_trend_coef)
+            _df["volume_1month"] = _df["volume_trend"].apply(_latest_volume)
+            _df["volume_3monthavg"] = _df["volume_trend"].apply(_volume_3monthavg)
+            _df["volume_6monthavg"] = _df["volume_trend"].apply(_volume_6monthavg)
+            _df["volume_12monthavg"] = _df["volume_trend"].apply(_volume_12monthavg)
+        except InternalServerError:
+            print("Keyword planner :: InternalServerError :: retrying after 2 seconds")
+            time.sleep(2)
+            _df = self.get_historical_metrics_df(keywords=keywords,
+                                                 location_codes=location_codes,
+                                                 language_id=language_id
+                                                 )
 
         return _df
 
@@ -370,9 +387,11 @@ class KeywordPlanService(ClientWrapper):
     def generate_historical_metrics(self,
                                     keyword_plan_resource_name: str,
                                     stripped_keyword_dict: dict):
+
         response_historical = self.keyword_plan_service.generate_historical_metrics(
             keyword_plan=keyword_plan_resource_name
         )
+
         _date_today = datetime.date.today()
         metrics = [{"date_obtained": _date_today,
                     "query": _m.search_query,
@@ -384,25 +403,41 @@ class KeywordPlanService(ClientWrapper):
                     "volume_trend": [v.monthly_searches for v in _m.keyword_metrics.monthly_search_volumes]}
                    for _m in response_historical.metrics]
 
-        metrics_dict = {d.get("query"): d for d in metrics}
+        empty_metric = {"date_obtained": _date_today,
+                        "query": "",
+                        "avg_searches": 0,
+                        "competition": "",
+                        "competition_index": None,
+                        "low_top_of_page_bid_micros": 0,
+                        "high_top_of_page_bid_micros": 0,
+                        "volume_trend": []}
 
-        print("")
-        print("queries not obtained: ")
-        for keyword, query in stripped_keyword_dict.items():
-            if query not in metrics_dict.keys():
-                print(f"|{keyword}| :: |{query}|")
-        print("")
-        print("extras: ")
-        for query in metrics_dict.keys():
-            if query not in stripped_keyword_dict.values():
-                print(f"|{query}|")
-        print("")
+        metrics_dict = {d.get("query"): d for d in metrics}
 
         metrics = []
         for keyword, query in stripped_keyword_dict.items():
             d = metrics_dict.get(query)
             if d:
+                # These are queries that were a result of stripping an input keyword (usually equal to the keyword)
+                # and also found in the metrics returned by `generate_historical_metrics`.
                 d["keyword"] = keyword
+                d["status"] = "OBTAINED"
+            else:
+                # These are queries that were a result of stripping an input keyword (usually equal to the keyword)
+                # but are NOT found in the metrics returned by `generate_historical_metrics`.
+                d = empty_metric
+                d["keyword"] = keyword
+                d["query"] = query
+                d["status"] = "NOT OBTAINED"
+            metrics.append(d)
+
+        for query, d in metrics_dict.items():
+            if query not in stripped_keyword_dict.values():
+                # These are queries that are found in the metrics returned by `generate_historical_metrics`
+                # but were not in the stripped keywords. Keyword planner is stripping some of them further
+                # based on its own rules that we don't quite understand.
+                d["keyword"] = ""
+                d["status"] = "ADDITIONAL"
                 metrics.append(d)
 
         return metrics
@@ -434,6 +469,12 @@ class KeywordPlanService(ClientWrapper):
         if isinstance(keywords, str):
             keywords = [keywords]
 
+        # It is necessary to strip any punctuation and non-ascii chars from the keyword before adding to a keyword plan
+        # This method therefore provides a stripped_keyword_dict which maps keywords to their "stripped" counterparts
+        # this is many-to-one mapping since two multiple different keywords may be mapped to the same stripped
+        # counterpart, e.g.:
+        # stripped_keyword_dict = {"i love chocolate!!":  "i love chocolate",
+        #                          "i-love-chocolate??": "i love chocolate"}
         stripped_keyword_dict = {kw: strip_illegal_chars(kw) for kw in keywords}
         keywords = [kw for kw in set(stripped_keyword_dict.values())
                     if 0 < len(kw) <= 70 and len(kw.split(' ')) <= 10]
@@ -729,6 +770,30 @@ def _latest_volume(volume_trends):
     if len(volume_trends) == 0:
         return None
     return volume_trends[-1]
+
+
+def _volume_3monthavg(volume_trends):
+    if not isinstance(volume_trends, list):
+        return None
+    if len(volume_trends) == 0:
+        return None
+    return np.mean(volume_trends[-3:])
+
+
+def _volume_6monthavg(volume_trends):
+    if not isinstance(volume_trends, list):
+        return None
+    if len(volume_trends) == 0:
+        return None
+    return np.mean(volume_trends[-6:])
+
+
+def _volume_12monthavg(volume_trends):
+    if not isinstance(volume_trends, list):
+        return None
+    if len(volume_trends) == 0:
+        return None
+    return np.mean(volume_trends[-12:])
 
 
 def _partition_list(_list, n):
