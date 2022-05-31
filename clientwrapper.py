@@ -356,6 +356,8 @@ class KeywordPlanService(ClientWrapper):
             _df["volume"] = _df["volume_trend"].apply(_latest_volume)
             _df["volume_last_month"] = _df["volume_trend"].apply(_previous_volume)
             _df["volume_last_year"] = _df["volume_trend"].apply(_last_year_volume)
+            _df["mom_change_volume"] = _df["volume_trend"].apply(_volume_mom)
+            _df["yoy_change_volume"] = _df["volume_trend"].apply(_volume_yoy)
             _df["volume_3monthavg"] = _df["volume_trend"].apply(_volume_3monthavg)
             _df["volume_6monthavg"] = _df["volume_trend"].apply(_volume_6monthavg)
             _df["volume_12monthavg"] = _df["volume_trend"].apply(_volume_12monthavg)
@@ -782,12 +784,28 @@ def _previous_volume(volume_trends):
     return volume_trends[-2]
 
 
+def _volume_mom(volume_trends):
+    if not isinstance(volume_trends, list):
+        return None
+    if len(volume_trends) < 2:
+        return None
+    return volume_trends[-1] - volume_trends[-2]
+
+
 def _last_year_volume(volume_trends):
     if not isinstance(volume_trends, list):
         return None
     if len(volume_trends) < 12:
         return None
     return volume_trends[-12]
+
+
+def _volume_yoy(volume_trends):
+    if not isinstance(volume_trends, list):
+        return None
+    if len(volume_trends) < 12:
+        return None
+    return volume_trends[-1] - volume_trends[-12]
 
 
 def _volume_3monthavg(volume_trends):
