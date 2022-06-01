@@ -318,7 +318,7 @@ class KeywordPlanService(ClientWrapper):
 
         metrics_df: pd.DataFrame = _df.drop(columns=['volume_trend_tuples'])
 
-        monthly_volume_df: pd.DataFrame = _df[['query', 'keyword', 'volume_trend_tuples']].explode('volume_trend_tuples')
+        monthly_volume_df: pd.DataFrame = _df[['date_obtained', 'query', 'keyword', 'volume_trend_tuples']].explode('volume_trend_tuples')
         monthly_volume_df['volume_trend_tuples'] = monthly_volume_df['volume_trend_tuples'].apply(_check_volume_trend_tuples)
 
         monthly_volume_df['month_name'] = monthly_volume_df['volume_trend_tuples'].apply(lambda t: t[3])
@@ -910,11 +910,14 @@ def _get_month_from_enum_value(month_enum_value):
 
 
 def strip_illegal_chars(s):
+    # lower case obvs
+    s = s.lower()
+    # replace `‘’ with simple '
+    s = re.sub(r"[`‘’]+", "'", s)
     # first remove any non-ascii characters, replace with a space
     s = re.sub(r"[^\x00-\x7F]+", " ", s)
     # then replace any punctuation with a space
-    for char in r"""!@%^()={}:;,.+-~"`#<>?/\|*&[]""":
-        s = s.replace(char, " ")
+    s = re.sub(r"""[!¡⁄@%^()={}:;,.+\-–—_±~“"#<>?/|*¶•ªº&\[\]\\]+""", " ", s)
     # finally, replace multiple spaces (r"\s+") with a single space
     s = re.sub(r"\s+", " ", s)
     return s.strip()
