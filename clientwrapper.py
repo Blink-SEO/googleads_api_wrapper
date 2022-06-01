@@ -301,7 +301,7 @@ class KeywordPlanService(ClientWrapper):
             keywords = [keywords]
 
         keyword_list_partition = _partition_list(_list=keywords, n=200)
-        frames = []
+        frames: List[pd.DataFrame] = []
         keyword_plans = []
 
         for _keyword_sublist in keyword_list_partition:
@@ -316,9 +316,9 @@ class KeywordPlanService(ClientWrapper):
             self.remove_keyword_plan(keyword_plan_resource_name=_kwp)
         _df = pd.concat(frames)
 
-        metrics_df = _df.drop(columns=['volume_trend_tuples'])
+        metrics_df: pd.DataFrame = _df.drop(columns=['volume_trend_tuples'])
 
-        monthly_volume_df = metrics_df[['query', 'volume_trend_tuples']].explode('volume_trend_tuples')
+        monthly_volume_df: pd.DataFrame = metrics_df[['query', 'keyword', 'volume_trend_tuples']].explode('volume_trend_tuples')
         monthly_volume_df['volume_trend_tuples'] = monthly_volume_df['volume_trend_tuples'].apply(_check_volume_trend_tuples)
 
         monthly_volume_df['month_name'] = monthly_volume_df['volume_trend_tuples'].apply(lambda t: t[3])
@@ -329,6 +329,12 @@ class KeywordPlanService(ClientWrapper):
         monthly_volume_df['volume'] = monthly_volume_df['volume_trend_tuples'].apply(lambda t: t[0])
 
         monthly_volume_df.drop(columns=['month_enum', 'volume_trend_tuples'], inplace=True)
+        monthly_volume_df.dropna(axis='index', subset=['month'], inplace=True)
+
+        metrics_df.drop_duplicates(subset=["query", "keyword"], keep="first", inplace=True)
+        monthly_volume_df.drop_duplicates(subset=["query", "keyword", "year", "month"], keep="first", inplace=True)
+
+        metrics_df.reset_index(drop=True, inplace=True)
         monthly_volume_df.reset_index(drop=True, inplace=True)
 
         return metrics_df, monthly_volume_df
