@@ -19,6 +19,7 @@ DEFAULT_LANGUAGE_ID = "1000"  # language defaults to "1000" (i.e. English)
 
 DEFAULT_KEYWORD_PLAN_CAMPAIGN_CPC_BID = 1000000
 DEFAULT_KEYWORD_PLAN_AD_GROUP_CPC_BID = 250000
+API_MULTIPLE_REQUEST_WAIT_TIME = 5
 
 RE_URL = re.compile(r"https?://(www\.)?[\w\-_+]*(\.\w{2,4}){0,2}/")
 
@@ -311,7 +312,7 @@ class KeywordPlanService(ClientWrapper):
                                                                          )
             keyword_plans.append(_kwp)
             frames.append(historical_metrics_df)
-            time.sleep(2)
+            time.sleep(API_MULTIPLE_REQUEST_WAIT_TIME)
 
         for _kwp in keyword_plans:
             self.remove_keyword_plan(keyword_plan_resource_name=_kwp)
