@@ -7,8 +7,9 @@ import uuid
 import re
 
 from math import ceil
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Tuple, Any
 
+from google.ads.googleads.client import GoogleAdsClient
 from google.api_core.exceptions import InternalServerError
 
 from . import LOCATION_ID_DICT
@@ -241,7 +242,7 @@ class ClientWrapper:
             customer_id=self.customer_id, operations=[keyword_plan_operation]
         )
 
-        print(f"Removed campaign {keyword_plan_response.results[0].resource_name}.")
+        # print(f"Removed campaign {keyword_plan_response.results[0].resource_name}.")
 
     def remove_ad_group(self,
                         ad_group_id: str = None,
@@ -262,7 +263,7 @@ class ClientWrapper:
             customer_id=self.customer_id, operations=[ad_group_operation]
         )
 
-        print(f"Removed ad group {ad_group_response.results[0].resource_name}.")
+        # print(f"Removed ad group {ad_group_response.results[0].resource_name}.")
 
     def _remove_all_keyword_plans(self):
         keyword_plan_ids_list = self._get_keyword_plan_ids()
@@ -295,28 +296,42 @@ class KeywordPlanService(ClientWrapper):
     def get_keyword_metrics(self,
                             keywords: Union[List[str], str],
                             location_codes: List[str] = None,
-                            language_id: str = None) -> pd.DataFrame:
+                            language_id: str = None) -> Tuple[pd.DataFrame, pd.DataFrame]:
         if isinstance(keywords, str):
             keywords = [keywords]
 
-        if len(keywords) <= 200:
-            historical_metrics_df = self.get_historical_metrics_df(keywords=keywords,
-                                                                   location_codes=location_codes,
-                                                                   language_id=language_id
-                                                                   )
-            return historical_metrics_df
-
         keyword_list_partition = _partition_list(_list=keywords, n=200)
         frames = []
+        keyword_plans = []
 
         for _keyword_sublist in keyword_list_partition:
-            historical_metrics_df = self.get_historical_metrics_df(keywords=_keyword_sublist,
-                                                                   location_codes=location_codes,
-                                                                   language_id=language_id
-                                                                   )
+            historical_metrics_df, _kwp = self.get_historical_metrics_df(keywords=_keyword_sublist,
+                                                                         location_codes=location_codes,
+                                                                         language_id=language_id
+                                                                         )
+            keyword_plans.append(_kwp)
             frames.append(historical_metrics_df)
 
-        return pd.concat(frames)
+        for _kwp in keyword_plans:
+            self.remove_keyword_plan(keyword_plan_resource_name=_kwp)
+        _df = pd.concat(frames)
+
+        metrics_df = _df.drop(columns=['volume_trend_tuples'])
+
+        monthly_volume_df = metrics_df[['query', 'volume_trend_tuples']].explode('volume_trend_tuples')
+        monthly_volume_df['volume_trend_tuples'] = monthly_volume_df['volume_trend_tuples'].apply(_check_volume_trend_tuples)
+
+        monthly_volume_df['month_name'] = monthly_volume_df['volume_trend_tuples'].apply(lambda t: t[3])
+        monthly_volume_df['month_enum'] = monthly_volume_df['volume_trend_tuples'].apply(lambda t: t[2])
+        monthly_volume_df['month'] = monthly_volume_df['month_enum'].apply(_get_month_from_enum_value)
+        monthly_volume_df['year'] = monthly_volume_df['volume_trend_tuples'].apply(lambda t: t[1])
+
+        monthly_volume_df['volume'] = monthly_volume_df['volume_trend_tuples'].apply(lambda t: t[0])
+
+        monthly_volume_df.drop(columns=['month_enum', 'volume_trend_tuples'], inplace=True)
+        monthly_volume_df.reset_index(drop=True, inplace=True)
+
+        return metrics_df, monthly_volume_df
 
     def get_forcast_metrics_df(self,
                                keywords: List[str],
@@ -341,7 +356,7 @@ class KeywordPlanService(ClientWrapper):
     def get_historical_metrics_df(self,
                                   keywords: List[str],
                                   location_codes: List[str] = None,
-                                  language_id: str = None) -> pd.DataFrame:
+                                  language_id: str = None) -> Tuple[pd.DataFrame, Any]:
 
         try:
             keyword_plan, stripped_keyword_dict = self.add_keyword_plan(keywords=keywords,
@@ -362,12 +377,12 @@ class KeywordPlanService(ClientWrapper):
         except InternalServerError:
             print("Keyword planner :: InternalServerError :: retrying after 2 seconds")
             time.sleep(2)
-            _df = self.get_historical_metrics_df(keywords=keywords,
-                                                 location_codes=location_codes,
-                                                 language_id=language_id
-                                                 )
+            _df, keyword_plan = self.get_historical_metrics_df(keywords=keywords,
+                                                               location_codes=location_codes,
+                                                               language_id=language_id
+                                                               )
 
-        return _df
+        return _df, keyword_plan
 
     def generate_forecast_metrics(self,
                                   keyword_plan_resource_name: str):
@@ -402,7 +417,9 @@ class KeywordPlanService(ClientWrapper):
                     "competition_index": _m.keyword_metrics.competition_index,
                     "low_top_of_page_bid_micros": _m.keyword_metrics.low_top_of_page_bid_micros,
                     "high_top_of_page_bid_micros": _m.keyword_metrics.high_top_of_page_bid_micros,
-                    "volume_trend": [v.monthly_searches for v in _m.keyword_metrics.monthly_search_volumes]}
+                    "volume_trend": [v.monthly_searches for v in _m.keyword_metrics.monthly_search_volumes],
+                    "volume_trend_tuples": [(v.monthly_searches, v.year, v.month.value, v.month.name)
+                                            for v in _m.keyword_metrics.monthly_search_volumes]}
                    for _m in response_historical.metrics]
 
         empty_metric = {"date_obtained": _date_today,
@@ -412,7 +429,8 @@ class KeywordPlanService(ClientWrapper):
                         "competition_index": None,
                         "low_top_of_page_bid_micros": 0,
                         "high_top_of_page_bid_micros": 0,
-                        "volume_trend": []}
+                        "volume_trend": [],
+                        "volume_trend_tuples": []}
 
         metrics_dict = {d.get("query"): d for d in metrics}
 
@@ -869,6 +887,20 @@ def _map_locations_ids_to_resource_names(client, location_ids):
 
 def _map_language_id_to_resource_name(client, language_id):
     return client.get_service("GoogleAdsService").language_constant_path(criterion_id=language_id)
+
+
+def _check_volume_trend_tuples(t):
+    if isinstance(t, tuple) and len(t) == 4:
+        return t
+    else:
+        return 0, 0, 0, ''
+
+
+def _get_month_from_enum_value(month_enum_value):
+    if month_enum_value <= 1:
+        return None
+    else:
+        return month_enum_value - 2
 
 
 def strip_illegal_chars(s):
