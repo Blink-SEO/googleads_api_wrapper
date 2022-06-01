@@ -318,7 +318,7 @@ class KeywordPlanService(ClientWrapper):
 
         metrics_df: pd.DataFrame = _df.drop(columns=['volume_trend_tuples'])
 
-        monthly_volume_df: pd.DataFrame = metrics_df[['query', 'keyword', 'volume_trend_tuples']].explode('volume_trend_tuples')
+        monthly_volume_df: pd.DataFrame = _df[['query', 'keyword', 'volume_trend_tuples']].explode('volume_trend_tuples')
         monthly_volume_df['volume_trend_tuples'] = monthly_volume_df['volume_trend_tuples'].apply(_check_volume_trend_tuples)
 
         monthly_volume_df['month_name'] = monthly_volume_df['volume_trend_tuples'].apply(lambda t: t[3])
