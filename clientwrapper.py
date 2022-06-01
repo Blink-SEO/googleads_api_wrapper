@@ -300,7 +300,7 @@ class KeywordPlanService(ClientWrapper):
         if isinstance(keywords, str):
             keywords = [keywords]
 
-        keyword_list_partition = _partition_list(_list=keywords, n=200)
+        keyword_list_partition = _partition_list(_list=keywords, n=1000)
         frames: List[pd.DataFrame] = []
         keyword_plans = []
 
@@ -311,6 +311,7 @@ class KeywordPlanService(ClientWrapper):
                                                                          )
             keyword_plans.append(_kwp)
             frames.append(historical_metrics_df)
+            time.sleep(2)
 
         for _kwp in keyword_plans:
             self.remove_keyword_plan(keyword_plan_resource_name=_kwp)
