@@ -10,6 +10,7 @@ from math import ceil
 from typing import List, Optional, Union, Tuple, Any
 
 from google.ads.googleads.client import GoogleAdsClient
+from google.ads.googleads.errors import GoogleAdsException
 from google.api_core.exceptions import InternalServerError
 
 from . import LOCATION_ID_DICT
@@ -302,19 +303,22 @@ class KeywordPlanService(ClientWrapper):
         if isinstance(keywords, str):
             keywords = [keywords]
 
-        keyword_list_partition = _partition_list(_list=keywords, n=10_000)
+        keyword_list_partition = _partition_list(_list=keywords, n=2_000)
         frames: List[pd.DataFrame] = []
         keyword_plans = []
 
         for _keyword_sublist in keyword_list_partition:
-            historical_metrics_df, _kwp = self.get_historical_metrics_df(keywords=_keyword_sublist,
-                                                                         location_codes=location_codes,
-                                                                         language_id=language_id
-                                                                         )
-            keyword_plans.append(_kwp)
-            frames.append(historical_metrics_df)
+            try:
+                historical_metrics_df, _kwp = self.get_historical_metrics_df(keywords=_keyword_sublist,
+                                                                             location_codes=location_codes,
+                                                                             language_id=language_id)
+                keyword_plans.append(_kwp)
+                frames.append(historical_metrics_df)
+                self.remove_keyword_plan(keyword_plan_resource_name=_kwp)
 
-            self.remove_keyword_plan(keyword_plan_resource_name=_kwp)
+            except GoogleAdsException:
+                print(f"GoogleAdsException encountered after obtaining {len(frames)} frames")
+                break
 
             if print_progress:
                 print(f"{len(frames)} - obtained metrics for {len(frames[-1])} keywords")
@@ -325,7 +329,11 @@ class KeywordPlanService(ClientWrapper):
 
         metrics_df: pd.DataFrame = _df.drop(columns=['volume_trend_tuples'])
 
-        monthly_volume_df: pd.DataFrame = _df[['date_obtained', 'query', 'keyword', 'volume_trend_tuples']].explode('volume_trend_tuples')
+        monthly_volume_df: pd.DataFrame = _df[['date_obtained',
+                                               'query',
+                                               'keyword',
+                                               'status',
+                                               'volume_trend_tuples']].explode('volume_trend_tuples')
         monthly_volume_df['volume_trend_tuples'] = monthly_volume_df['volume_trend_tuples'].apply(_check_volume_trend_tuples)
 
         monthly_volume_df['month_name'] = monthly_volume_df['volume_trend_tuples'].apply(lambda t: t[3])
