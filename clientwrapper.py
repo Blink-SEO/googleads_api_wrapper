@@ -297,11 +297,12 @@ class KeywordPlanService(ClientWrapper):
     def get_keyword_metrics(self,
                             keywords: Union[List[str], str],
                             location_codes: List[str] = None,
-                            language_id: str = None) -> Tuple[pd.DataFrame, pd.DataFrame]:
+                            language_id: str = None,
+                            print_progress: bool = False) -> Tuple[pd.DataFrame, pd.DataFrame]:
         if isinstance(keywords, str):
             keywords = [keywords]
 
-        keyword_list_partition = _partition_list(_list=keywords, n=1000)
+        keyword_list_partition = _partition_list(_list=keywords, n=10_000)
         frames: List[pd.DataFrame] = []
         keyword_plans = []
 
@@ -314,6 +315,9 @@ class KeywordPlanService(ClientWrapper):
             frames.append(historical_metrics_df)
 
             self.remove_keyword_plan(keyword_plan_resource_name=_kwp)
+
+            if print_progress:
+                print(f"{len(frames)} - obtained metrics for {len(frames[-1])} keywords")
 
             time.sleep(API_MULTIPLE_REQUEST_WAIT_TIME)
 
