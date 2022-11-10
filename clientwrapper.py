@@ -700,6 +700,7 @@ class KeywordPlanIdeaService(ClientWrapper):
                          customer_id=customer_id,
                          location_codes=location_codes,
                          language_id=language_id)
+
         self.site_url = site_url
 
         self.keyword_plan_idea_service = self.client.get_service(

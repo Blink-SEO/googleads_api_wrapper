@@ -7,24 +7,20 @@ class KeywordPlanner:
     def __init__(self,
                  customer_id: str,
                  googleads_client: GoogleAdsClient,
-                 site_url: str,
+                 site_url: str = None,
                  location_codes: List[str] = None,
                  language_id: str = None,
                  ):
-
         self.metrics = KeywordPlanService(googleads_client=googleads_client,
                                           customer_id=customer_id,
                                           location_codes=location_codes,
                                           language_id=language_id)
 
-        if site_url is None:
-            self.ideas = None
-        else:
-            self.ideas = KeywordPlanIdeaService(googleads_client=googleads_client,
-                                                customer_id=customer_id,
-                                                site_url=site_url,
-                                                location_codes=location_codes,
-                                                language_id=language_id)
+        self.ideas = KeywordPlanIdeaService(googleads_client=googleads_client,
+                                            customer_id=customer_id,
+                                            site_url=site_url,
+                                            location_codes=location_codes,
+                                            language_id=language_id)
 
 
 def googleads_client_from_yaml(googleads_yaml_string: str) -> GoogleAdsClient:
