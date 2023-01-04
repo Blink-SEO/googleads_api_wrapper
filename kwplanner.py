@@ -24,7 +24,7 @@ class KeywordPlanner:
 
 
 def googleads_client_from_yaml(googleads_yaml_string: str) -> GoogleAdsClient:
-    return GoogleAdsClient.load_from_string(yaml_str=googleads_yaml_string)
+    return GoogleAdsClient.load_from_string(yaml_str=googleads_yaml_string, version="v12")
 
 
 def keyword_planner_from_yaml(googleads_yaml_string: str,

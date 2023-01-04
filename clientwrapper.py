@@ -10,6 +10,7 @@ from math import ceil
 from typing import List, Optional, Union, Tuple, Any
 
 from google.ads.googleads.client import GoogleAdsClient
+# from google.ads.googleads.v10.resources import KeywordPlanGeoTarget
 from google.ads.googleads.errors import GoogleAdsException
 from google.api_core.exceptions import InternalServerError
 
@@ -27,12 +28,12 @@ RE_URL = re.compile(r"https?://(www\.)?[\w\-_+]*(\.\w{2,4}){0,2}/")
 
 class ClientWrapper:
     def __init__(self,
-                 googleads_client,
+                 googleads_client: GoogleAdsClient,
                  customer_id: str,
                  location_codes: List[str] = None,
                  language_id: str = None
                  ):
-        self.client = googleads_client
+        self.client: GoogleAdsClient = googleads_client
         self.customer_id = customer_id
         self.googleads_service = self.client.get_service("GoogleAdsService")
 
@@ -276,7 +277,7 @@ class ClientWrapper:
 
 class KeywordPlanService(ClientWrapper):
     def __init__(self,
-                 googleads_client,
+                 googleads_client: GoogleAdsClient,
                  customer_id: str,
                  location_codes: List[str] = None,
                  language_id: Optional[str] = None
@@ -589,7 +590,7 @@ class KeywordPlanService(ClientWrapper):
         if cpc_bid_micros is None:
             cpc_bid_micros = self.default_keyword_plan_campaign_cpc_bid_micros
 
-        operation = self.client.get_type("KeywordPlanCampaignOperation")
+        operation = self.client.get_type("KeywordPlanCampaignOperation", version="v12")
         keyword_plan_campaign = operation.create
 
         keyword_plan_campaign.name = f"Keyword plan campaign {uuid.uuid4()}"
@@ -600,7 +601,9 @@ class KeywordPlanService(ClientWrapper):
         # Other geo target constants can be referenced here:
         # https://developers.google.com/google-ads/api/reference/data/geotargets
         for _loc in location_resources:
-            geo_target = self.client.get_type("KeywordPlanGeoTarget")
+            geo_target = self.client.get_type("KeywordPlanGeoTarget", version="v12")
+            # print('geo_target type: ')
+            # print(type(geo_target))
             geo_target.geo_target_constant = _loc
             keyword_plan_campaign.geo_targets.append(geo_target)
 
@@ -690,7 +693,7 @@ class KeywordPlanService(ClientWrapper):
 
 class KeywordPlanIdeaService(ClientWrapper):
     def __init__(self,
-                 googleads_client,
+                 googleads_client: GoogleAdsClient,
                  customer_id: str,
                  site_url: str = None,
                  location_codes: List[str] = None,
