@@ -517,7 +517,7 @@ class KeywordPlanService(ClientWrapper):
         # counterpart, e.g.:
         # stripped_keyword_dict = {"i love chocolate!!":  "i love chocolate",
         #                          "i-love-chocolate??": "i love chocolate"}
-        stripped_keyword_dict = {kw: strip_illegal_chars(kw) for kw in keywords}
+        stripped_keyword_dict = {kw: strip_illegal_chars(kw, language_id) for kw in keywords}
         keywords = [kw for kw in set(stripped_keyword_dict.values())
                     if 0 < len(kw) <= 70 and len(kw.split(' ')) <= 10]
 
@@ -928,13 +928,16 @@ def _get_month_from_enum_value(month_enum_value):
         return month_enum_value - 2
 
 
-def strip_illegal_chars(s):
+def strip_illegal_chars(s, language_id):
     # lower case obvs
     s = s.lower()
     # replace `‘’ with simple '
     s = re.sub(r"[`‘’]+", "'", s)
     # first remove any non-ascii characters, replace with a space
-    s = re.sub(r"[^\x00-\x7F]+", " ", s)
+    if language_id in ['1001']: # when german language_id don't replace one of [Ä, ä, Ö, ö, Ü, ü, ß]
+      s = re.sub(r"[^\x00-\x7F\xC4\xE4\xD6\xF6\xDC\xFC\xDF]+", " ", s)
+    else:
+      s = re.sub(r"[^\x00-\x7F]+", " ", s)
     # then replace any punctuation with a space
     s = re.sub(r"""[!¡⁄@%^()={}:;,.+\-–—_±~“"#<>?/|*¶•ªº&\[\]\\]+""", " ", s)
     # finally, replace multiple spaces (r"\s+") with a single space
